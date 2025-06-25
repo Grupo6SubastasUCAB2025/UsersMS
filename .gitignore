@@ -1,0 +1,64 @@
+bin/
+obj/
+out/
+*.exe
+*.dll
+*.app
+*.so
+*.dylib
+*.lib
+
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+.vscode/
+.vs/
+
+.idea/
+
+.DS_Store
+
+Thumbs.db
+
+*.log
+logs/
+
+TestResults/
+*.testresults
+*.coverage
+*.coveragexml
+*.vsmdi
+*.vsp
+*.vspx
+*.sap
+
+## dotnet
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+## Entity Framework Migrations
+Migrations/
+
+## Secrets
+secrets.json
+
+## ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+## Others
+*.swp
+*.bak
+*.tmp
+
+# Environment files
+.env
+.env.*
+
+## Ignore user secrets folder
+**/secrets/
+
+# LaunchSettings
+Properties/launchSettings.json
