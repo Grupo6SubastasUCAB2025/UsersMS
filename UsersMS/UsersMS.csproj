@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="AutoMapper" Version="14.0.0" />
+    <PackageReference Include="Keycloak.AuthServices.Authentication" Version="2.6.1" />
     <PackageReference Include="MediatR" Version="12.5.0" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
     <PackageReference Include="Scrutor.AspNetCore" Version="3.3.0" />
@@ -18,6 +19,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\UsersMS.Application\UsersMS.Application.csproj" />
+    <ProjectReference Include="..\UsersMS.Auth\UsersMS.Auth.csproj" />
     <ProjectReference Include="..\UsersMS.Infrastructure\UsersMS.Infrastructure.csproj" />
   </ItemGroup>
 

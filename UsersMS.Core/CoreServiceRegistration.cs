@@ -15,9 +15,9 @@ namespace UsersMS.Core
             LoggingConfiguration.ConfigureSerilog(builder);
         }
 
-        /*public static void UseLogging(WebApplication app)
+        public static void UseLogging(WebApplication app)
         {
-            LoggingConfiguration.UseSerilogRequestLogging(app);
-        }*/
+            LoggingConfiguration.UseCustomSerilogRequestLogging(app);
+        }
     }
 }

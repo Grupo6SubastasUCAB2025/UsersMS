@@ -1,0 +1,11 @@
+{
+  "realm": "SubastasUCAB",
+  "auth-server-url": "http://localhost:8080/",
+  "ssl-required": "external",
+  "resource": "ClientSubastasUCAB",
+  "credentials": {
+    "secret": "oWxAA9i4yRhxysPR4XLg83qMbLdycDhp"
+  },
+  "verify-token-audience": true,
+  "confidential-port": 0
+}

@@ -1,0 +1,107 @@
+﻿using UsersMS.Application.DTOs.Auth;
+using UsersMS.Core.Application;
+using UsersMS.Infrastructure.Adapters.Keycloak;
+using UsersMS.Infrastructure.Adapters;
+using UsersMS.Domain.Utilities;
+
+namespace UsersMS.Infrastructure.Validators.AssignRole
+{
+    public class AssignRoleValidator : IService<AssignRoleRequestDTO, AssignRoleResponseDTO>
+    {
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly HeadersToken _headersToken;
+        private readonly IKeycloakRepository _keycloakRepository;
+
+        public AssignRoleValidator(
+            IHttpClientFactory httpClientFactory,
+            HeadersToken headersToken,
+            IKeycloakRepository keycloakRepository)
+        {
+            _httpClientFactory = httpClientFactory;
+            _headersToken = headersToken;
+            _keycloakRepository = keycloakRepository;
+        }
+
+        public async Task<AssignRoleResponseDTO> Execute(AssignRoleRequestDTO request)
+        {
+            var client = _httpClientFactory.CreateClient();
+            var token = _headersToken.GetToken();
+            _headersToken.SetAuthorizationHeader(client);
+
+            try
+            {
+                var (_, role, email) = await _keycloakRepository.IntrospectTokenAsync(client, token);
+
+                if (!string.Equals(email, request.UserEmail, StringComparison.OrdinalIgnoreCase))
+                {
+                    return Fail("Email does not match.", request);
+                }
+
+                if (!RoleValidator.CanPerformAction(role, request.RoleName))
+                {
+                    throw new UnauthorizedAccessException("You do not have permissions to assign this type of role.");
+                }
+
+                var clientId = await _keycloakRepository.GetClientIdAsync(client);
+                if (string.IsNullOrEmpty(clientId))
+                {
+                    return Fail("The client ID could not be found.", request);
+                }
+
+                var roleId = await _keycloakRepository.GetRoleAsync(client, clientId, request.RoleName);
+                if (string.IsNullOrEmpty(roleId))
+                {
+                    return Fail("The client role could not be found.", request);
+                }
+
+                var (userId, _) = await _keycloakRepository.GetUserByEmailAsync(client, request.EmailAssignedRole, string.Empty);
+
+                if (await _keycloakRepository.VerifyRoleAssignmentAsync(client, userId, clientId, roleId))
+                {
+                    return Fail("The user already has a role assigned.", request);
+                }
+
+                if (!await _keycloakRepository.AssignRoleAsync(client, userId, clientId, roleId, request.RoleName))
+                {
+                    return Fail("The role could not be assigned to the user.", request);
+                }
+
+                if (!await _keycloakRepository.VerifyRoleAssignmentAsync(client, userId, clientId, roleId))
+                {
+                    return Fail("The role was not assigned correctly.", request);
+                }
+
+                return new AssignRoleResponseDTO
+                {
+                    Success = true,
+                    Message = "Role assigned successfully",
+                    Time = DateTime.UtcNow,
+                    UserEmail = request.UserEmail,
+                    RoleName = request.RoleName,
+                    EmailAssignedRole = request.EmailAssignedRole
+                };
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Fail($"Unauthorized access: {ex.Message}", request);
+            }
+            catch (Exception ex)
+            {
+                return Fail(ex.Message, request);
+            }
+        }
+
+        private AssignRoleResponseDTO Fail(string message, AssignRoleRequestDTO request)
+        {
+            return new AssignRoleResponseDTO
+            {
+                Success = false,
+                Message = message,
+                Time = DateTime.UtcNow,
+                UserEmail = request.UserEmail,
+                RoleName = request.RoleName,
+                EmailAssignedRole = request.EmailAssignedRole
+            };
+        }
+    }
+}
