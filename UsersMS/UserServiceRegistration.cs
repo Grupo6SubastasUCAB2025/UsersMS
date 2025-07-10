@@ -4,7 +4,6 @@ using UsersMS.Application.Handlers.User.RecordUserData;
 using UsersMS.Application.Services.Record;
 using UsersMS.Core.Application;
 using UsersMS.Domain.Factories;
-using UsersMS.Infrastructure.Adapters.Keycloak;
 using UsersMS.Infrastructure.Database;
 using UsersMS.Infrastructure.DTOs.Record;
 using UsersMS.Infrastructure.DTOs.RecordUserData;
@@ -33,6 +32,7 @@ using UsersMS.Application.Queries.GetTechnicalSupportById;
 using UsersMS.Application.Queries.GetTechnicalSupportByName;
 using UsersMS.Application.Handlers.TechnicalSupport.GetTechnicalSupportById;
 using UsersMS.Application.Decorators;
+using UsersMS.Infrastructure.Adapters.Keycloak;
 
 namespace UsersMS
 {
@@ -58,7 +58,6 @@ namespace UsersMS
             services.AddScoped<IBidderFactory, BidderFactory>();
             services.AddScoped<ITechnicalSupportFactory, TechnicalSupportFactory>();
 
-            //services.AddScoped<IKeycloakRepository, KeycloakRepository>();
             services.AddHttpClient();
             services.AddHttpContextAccessor();
 
@@ -86,7 +85,7 @@ namespace UsersMS
             services.AddScoped<IRequestHandler<GetTechnicalSupportByIdQuery, GetTechnicalSupportByIdResponseDTO>, GetTechnicalSupportByIdQueryHandler>();
             services.AddScoped<IRequestHandler<GetTechnicalSupportByNameQuery, GetTechnicalSupportByNameResponseDTO>, GetTechnicalSupportByNameQueryHandler>();
 
-
+            services.AddHttpClient();
 
             services.Decorate<IService<RecordUserDataRequestDTO, RecordUserDataResponseDTO>>(
                 (inner, provider) => new RecordUserDataSecurityDecorator<RecordUserDataRequestDTO, RecordUserDataResponseDTO>(

@@ -1,4 +1,5 @@
 using UsersMS;
+using UsersMS.Auth;
 using UsersMS.Core;
 using UsersMS.Core.Utilities;
 using UsersMS.Swagger;
@@ -13,9 +14,11 @@ builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 
 UserServiceRegistration.RegisterServices(builder.Services, builder.Configuration);
+AuthServiceRegistration.RegisterServices(builder.Services, builder.Configuration);
 
-builder.Services.AddReverseProxy().LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
-
+builder.Services
+    .AddReverseProxy()
+    .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
 
 builder.Services.AddSwaggerConfiguration(builder.Configuration);
 
@@ -32,7 +35,7 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-//CoreServiceRegistration.UseLogging(app);
+CoreServiceRegistration.UseLogging(app);
 
 app.UseSwaggerUIConfiguration(app.Environment, builder.Configuration);
 
@@ -45,7 +48,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
 app.MapReverseProxy();
 
 app.RunLogger();

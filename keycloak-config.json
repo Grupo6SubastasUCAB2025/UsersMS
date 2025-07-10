@@ -1,0 +1,165 @@
+{
+  "realm": "SubastasUCAB",
+  "enabled": true,
+  "users": [
+    {
+      "username": "admin@gmail.com",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "admin@gmail.com",
+      "attributes": {
+        "userId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        "name": "Admin User",
+        "phone": "04141234567",
+        "cedula": "12345678",
+        "role": "Administrator"
+      },
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin123",
+          "temporary": false
+        }
+      ],
+      "clientRoles": {
+        "ClientSubastasUCAB": [ "Administrator" ]
+      }
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "ClientSubastasUCAB",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "redirectUris": [ "http://localhost:5173/*" ],
+      "webOrigins": [ "http://localhost:5173" ],
+      "publicClient": false,
+      "secret": "oWxAA9i4yRhxysPR4XLg83qMbLdycDhp",
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "attributes": {
+        "backchannel.logout.session.required": "true",
+        "backchannel.logout.revoke.offline.tokens": "false"
+      },
+      "protocolMappers": [
+        {
+          "name": "audience-SubastasUCAB",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "ClientSubastasUCAB",
+            "id.token.claim": "true",
+            "access.token.claim": "true"
+          }
+        },
+        {
+          "name": "email",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-property-mapper",
+          "consentRequired": false,
+          "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "email",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "email",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "userId",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "userId",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "userId",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "name",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "name",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "name",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "phone",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "phone",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "phone",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "cedula",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "cedula",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "cedula",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "role",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "role",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "role",
+            "jsonType.label": "String"
+          }
+        }
+      ]
+    }
+  ],
+  "roles": {
+    "client": {
+      "ClientSubastasUCAB": [
+        {
+          "name": "Administrator",
+          "description": "Role for system administrators"
+        },
+        {
+          "name": "Auctioneer",
+          "description": "Role for users who manage and run auctions"
+        },
+        {
+          "name": "Bidder",
+          "description": "Role for users who place bids on items"
+        },
+        {
+          "name": "TechnicalSupport",
+          "description": "Role for users in technical support"
+        }
+      ]
+    }
+  }
+}
