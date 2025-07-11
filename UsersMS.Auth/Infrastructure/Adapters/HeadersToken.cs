@@ -12,32 +12,32 @@ namespace UsersMS.Infrastructure.Adapters
             _httpContextAccessor = httpContextAccessor;
         }
 
-        public string GetToken()
+        public string GetToken(string? fallbackToken = null)
         {
             var context = _httpContextAccessor.HttpContext;
-            if (context == null)
+
+            var authorizationHeader = context?.Request?.Headers["Authorization"].FirstOrDefault();
+
+            if (!string.IsNullOrEmpty(authorizationHeader))
             {
-                throw new InvalidOperationException("HttpContext es nulo.");
+                var token = authorizationHeader.Split(" ").Last();
+                if (!string.IsNullOrEmpty(token))
+                {
+                    return token;
+                }
             }
 
-            var authorizationHeader = context.Request.Headers["Authorization"].FirstOrDefault();
-            if (string.IsNullOrEmpty(authorizationHeader))
+            if (!string.IsNullOrEmpty(fallbackToken))
             {
-                throw new InvalidOperationException("Authorization header esta faltante.");
+                return fallbackToken;
             }
 
-            var token = authorizationHeader.Split(" ").Last();
-            if (string.IsNullOrEmpty(token))
-            {
-                throw new InvalidOperationException("Token esta faltante.");
-            }
-
-            return token;
+            throw new InvalidOperationException("Authorization header y fallback token están ausentes.");
         }
 
-        public void SetAuthorizationHeader(HttpClient client)
+        public void SetAuthorizationHeader(HttpClient client, string? fallbackToken = null)
         {
-            var token = GetToken();
+            var token = GetToken(fallbackToken);
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         }
     }

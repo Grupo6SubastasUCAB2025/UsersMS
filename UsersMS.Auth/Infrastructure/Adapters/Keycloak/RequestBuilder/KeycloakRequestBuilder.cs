@@ -11,6 +11,7 @@ namespace UsersMS.Infrastructure.Adapters.Keycloak.RequestBuilder
         private readonly IConfiguration _configuration;
         private KeycloakRequestDTO _request;
         private Dictionary<string, object>? _newPassword;
+        private Dictionary<string, object> _attributes = new();
 
         public KeycloakRequestBuilder(IConfiguration configuration)
         {
@@ -65,6 +66,15 @@ namespace UsersMS.Infrastructure.Adapters.Keycloak.RequestBuilder
             return this;
         }
 
+        public IKeycloakRequestBuilder WithAttributes(Dictionary<string, string> attributes)
+        {
+            foreach (var kvp in attributes)
+            {
+                _attributes[kvp.Key] = new[] { kvp.Value };
+            }
+            return this;
+        }
+
         public IKeycloakRequestBuilder WithNewPassword(string password)
         {
             if (string.IsNullOrEmpty(password))
@@ -74,7 +84,8 @@ namespace UsersMS.Infrastructure.Adapters.Keycloak.RequestBuilder
             _newPassword = new Dictionary<string, object>
                {
                { "type", "password" },
-                    { "value", password }
+                    { "value", password },
+                { "temporary", false }
                };
             return this;
         }
@@ -85,8 +96,10 @@ namespace UsersMS.Infrastructure.Adapters.Keycloak.RequestBuilder
             {
                 type = _newPassword?["type"],
                 value = _newPassword?["value"],
+                temporary = _newPassword?["temporary"]
             };
         }
+
 
         public object GetRoleData(string roleId, string roleName)
         {
@@ -111,6 +124,23 @@ namespace UsersMS.Infrastructure.Adapters.Keycloak.RequestBuilder
         public IKeycloakRequestBuilder WithPassword(string password)
         {
             _request.Password = password ?? throw new ArgumentException("Password no puede ser null.");
+            return this;
+        }
+
+        public IKeycloakRequestBuilder WithNewPassword(string password, bool temporary)
+        {
+            if (string.IsNullOrEmpty(password))
+            {
+                throw new ConfigurationException("Password cannot be null or empty.");
+            }
+
+            _newPassword = new Dictionary<string, object>
+            {
+                { "type", "password" },
+                { "value", password },
+                { "temporary", temporary }
+            };
+
             return this;
         }
 
@@ -140,7 +170,8 @@ namespace UsersMS.Infrastructure.Adapters.Keycloak.RequestBuilder
                 email = _request.Email,
                 enabled = _request.Enabled,
                 emailVerified = _request.EmailVerified,
-                credentials = _request.Credentials
+                credentials = _request.Credentials,
+                attributes = _attributes
             };
         }
 
@@ -161,7 +192,10 @@ namespace UsersMS.Infrastructure.Adapters.Keycloak.RequestBuilder
 
         public StringContent BuildJson(object data)
         {
-            var json = JsonSerializer.Serialize(data);
+            var json = JsonSerializer.Serialize(data, new JsonSerializerOptions
+            {
+                DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+            });
             return new StringContent(json, Encoding.UTF8, "application/json");
         }
     }
