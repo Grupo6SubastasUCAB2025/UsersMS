@@ -14,6 +14,7 @@
         IKeycloakRequestBuilder WithCredentials(string password);
         IKeycloakRequestBuilder WithEmailVerified(bool emailVerified);
         IKeycloakRequestBuilder WithEnabled(bool enabled);
+        IKeycloakRequestBuilder WithAttributes(Dictionary<string, string> attributes);
         object GetUserData();
         object GetNewPasswordData();
         object GetRoleData(string roleId, string roleName);

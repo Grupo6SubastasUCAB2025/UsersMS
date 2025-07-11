@@ -8,7 +8,7 @@ namespace UsersMS.Application.DTOs.Auth
     {
         [Required(ErrorMessage = "User email is required.")]
         [JsonPropertyOrder(2)]
-        public string EmailAssignedRole { get; set; } = string.Empty;
+        public string UserEmail { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Role is required.")]
         [JsonPropertyOrder(2)]

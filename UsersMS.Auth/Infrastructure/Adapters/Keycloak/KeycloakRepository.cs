@@ -4,6 +4,9 @@ using UsersMS.Commons.Exceptions;
 using UsersMS.Infrastructure.Adapters.Keycloak.RequestBuilder;
 using UsersMS.Infrastructure.Adapters.Keycloak.UrlHelper;
 using UsersMS.Infrastructure.Adapters.Keycloak;
+using System.Text;
+using System.Net.Http.Headers;
+using Microsoft.Graph.Models;
 
 namespace UsersMS.Infrastructure.Adapters.KeycloakRepository
 {
@@ -107,19 +110,36 @@ namespace UsersMS.Infrastructure.Adapters.KeycloakRepository
             return (userId, role!, email);
         }
 
-        public async Task<bool> CreateUserAsync(HttpClient client, string email, string password)
+        public async Task<bool> CreateUserAsync(HttpClient client, string email, string password, Dictionary<string, string> attributes)
         {
             var endpoint = _urlHelperKeycloak.GetUserEndpoint(_configuration);
-            _keycloakRequestBuilder.WithUsername(email).WithEmail(email).WithCredentials(password).WithEnabled(true).WithEmailVerified(true);
 
-            var response = await client.PostAsync(endpoint, _keycloakRequestBuilder.BuildJson(_keycloakRequestBuilder.GetUserData()));
-            var content = await response.Content.ReadAsStringAsync();
+            var userData = new
+            {
+                email = email,
+                enabled = true,
+                emailVerified = true,
+                credentials = new[]
+                {
+                    new { type = "password", value = password, temporary = false }
+                },
+                attributes = attributes
+            };
+
+            var content = _keycloakRequestBuilder.BuildJson(userData);
+            var response = await client.PostAsync(endpoint, content);
+            var responseContent = await response.Content.ReadAsStringAsync();
 
             if (!response.IsSuccessStatusCode)
-                throw new UnauthorizedAccessException($"User creation failed: {content}");
+            {
+                throw new UnauthorizedAccessException($"User creation failed: {responseContent}");
+            }
 
             return true;
         }
+
+
+
 
         public async Task<(string UserId, bool HasRequiredAction)> GetUserByEmailAsync(HttpClient client, string email, string requiredAction)
         {
@@ -197,14 +217,48 @@ namespace UsersMS.Infrastructure.Adapters.KeycloakRepository
             var endpoint = _urlHelperKeycloak.GetResetPasswordEndpoint(_configuration, userId);
             _keycloakRequestBuilder.WithNewPassword(newPassword);
 
-            var response = await client.PutAsync(endpoint, _keycloakRequestBuilder.BuildJson(_keycloakRequestBuilder.GetNewPasswordData()));
+            var passwordContent = _keycloakRequestBuilder.BuildJson(_keycloakRequestBuilder.GetNewPasswordData());
+            var response = await client.PutAsync(endpoint, passwordContent);
             var content = await response.Content.ReadAsStringAsync();
 
             if (!response.IsSuccessStatusCode)
-                throw new UnauthorizedAccessException($"Change password failed: {content}");
+            {
+                throw new UnauthorizedAccessException($"Error al cambiar la contraseña: {content}");
+            }
 
             return true;
         }
+
+        public async Task<bool> ResetPasswordAsync(HttpClient client, string userId, string newPassword, bool temporary)
+        {
+            try
+            {
+                var resetPasswordEndpoint = _urlHelperKeycloak.GetResetPasswordEndpoint(_configuration, userId);
+                var resetPasswordRequest = _keycloakRequestBuilder
+                    .WithNewPassword(newPassword)
+                    .BuildJson(_keycloakRequestBuilder.GetNewPasswordData());
+
+                var resetPasswordResponse = await client.PutAsync(resetPasswordEndpoint, resetPasswordRequest);
+                var resetPasswordContent = await resetPasswordResponse.Content.ReadAsStringAsync();
+
+                if (!resetPasswordResponse.IsSuccessStatusCode)
+                {
+                    throw new Exception($"Error al resetear la contraseña: {resetPasswordContent}");
+                }
+
+                return true;
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                throw new UnauthorizedAccessException($"Unauthorized access: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error al resetear la contraseña: {ex.Message}");
+            }
+        }
+
+
 
         public async Task<(string AccessToken, string RefreshToken)> RefreshTokenAsync(HttpClient client, string refreshToken)
         {

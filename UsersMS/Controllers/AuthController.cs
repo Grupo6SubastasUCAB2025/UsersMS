@@ -3,8 +3,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using UsersMS.Application.DTOs.Auth;
 using UsersMS.Auth.Application.Commands;
+using UsersMS.Auth.Infrastructure.DTOs.ChangePassword;
 using UsersMS.Auth.Infrastructure.DTOs.Login;
 using UsersMS.Auth.Infrastructure.DTOs.Logout;
+using UsersMS.Auth.Infrastructure.DTOs.RecoverPassword;
 using UsersMS.Auth.Infrastructure.DTOs.RefreshToken;
 using UsersMS.Core.Utilities;
 
@@ -47,8 +49,8 @@ namespace UsersMS.Auth.Controllers
             }, ModelState, _logger, "RefreshToken");
         }
 
-        /*[HttpPost("CreateUser")]
-        [Authorize]
+        [HttpPost("CreateUser")]
+        [AllowAnonymous]
         [ProducesResponseType(typeof(CreateUserResponseDTO), 200)]
         public async Task<IActionResult> CreateUser([FromBody] CreateUserRequestDTO request)
         {
@@ -58,7 +60,7 @@ namespace UsersMS.Auth.Controllers
                 var response = await _mediator.Send(command);
                 return response.Success ? Ok(response) : BadRequest(response.Message);
             }, ModelState, _logger, "CreateUser");
-        }*/
+        }
 
         [HttpPost("Logout")]
         [Authorize]
@@ -71,6 +73,32 @@ namespace UsersMS.Auth.Controllers
                 var response = await _mediator.Send(command);
                 return response.Success ? Ok(response) : BadRequest(response.Message);
             }, ModelState, _logger, "Logout");
+        }
+
+        [HttpPost("RecoverPassword")]
+        [AllowAnonymous]
+        [ProducesResponseType(typeof(RecoverPasswordResponseDTO), 200)]
+        public async Task<IActionResult> RecoverPassword([FromBody] RecoverPasswordRequestDTO request)
+        {
+            return await ActionExecutor.Execute(async () =>
+            {
+                var command = new RecoverPasswordCommand(request);
+                var response = await _mediator.Send(command);
+                return response.Success ? Ok(response) : BadRequest(response.Message);
+            }, ModelState, _logger, "RecoverPassword");
+        }
+
+        [HttpPut("ChangePassword")]
+        [Authorize]
+        [ProducesResponseType(typeof(ChangePasswordResponseDTO), 200)]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequestDTO request)
+        {
+            return await ActionExecutor.Execute(async () =>
+            {
+                var command = new ChangePasswordCommand(request);
+                var response = await _mediator.Send(command);
+                return response.Success ? Ok(response) : BadRequest(response.Message);
+            }, ModelState, _logger, "ChangePassword");
         }
     }
 }

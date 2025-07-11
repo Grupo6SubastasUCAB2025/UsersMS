@@ -1,12 +1,30 @@
 version: '3.8'
 
 services:
+  postgres:
+    image: postgres:16
+    container_name: PostgresSubastasUCAB
+    environment:
+      POSTGRES_DB: UsersMS
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "1234"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5435:5432"
+
   keycloak:
     image: quay.io/keycloak/keycloak:26.0.5
     container_name: KeycloakSubastasUCAB
     ports:
       - "8080:8080"
     environment:
+      - KC_DB=postgres
+      - KC_DB_URL_HOST=postgres
+      - KC_DB_URL_PORT=5432
+      - KC_DB_URL_DATABASE=UsersMS
+      - KC_DB_USERNAME=postgres
+      - KC_DB_PASSWORD=1234
       - KC_BOOTSTRAP_ADMIN_USERNAME=admin
       - KC_BOOTSTRAP_ADMIN_PASSWORD=admin123
       - KEYCLOAK_IMPORT=/opt/keycloak/data/import/keycloak-config.json
@@ -14,6 +32,9 @@ services:
     volumes:
       - subastasucab-keycloak_data:/opt/keycloak/data
       - ./keycloak-config.json:/opt/keycloak/data/import/keycloak-config.json:ro
+    depends_on:
+      - postgres
 
 volumes:
   subastasucab-keycloak_data:
+  postgres_data:

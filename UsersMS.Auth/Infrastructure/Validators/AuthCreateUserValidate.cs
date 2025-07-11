@@ -1,28 +1,27 @@
-﻿using UsersMS.Application.DTOs.Auth;
+﻿using System.Net.Http.Headers;
+using UsersMS.Application.DTOs.Auth;
 using UsersMS.Core.Application;
 using UsersMS.Infrastructure.Adapters.Keycloak.Email;
 using UsersMS.Infrastructure.Adapters.Keycloak;
 using UsersMS.Infrastructure.Adapters;
+using Microsoft.AspNetCore.Http;
 
 namespace UsersMS.Application.Validators.CreateUser
 {
     public class AuthCreateUserValidator : IService<CreateUserRequestDTO, CreateUserResponseDTO>
     {
         private readonly IHttpClientFactory _httpClientFactory;
-        private readonly HeadersToken _headersToken;
         private readonly IKeycloakRepository _keycloakRepository;
         private readonly IService<AssignRoleRequestDTO, AssignRoleResponseDTO> _assignRoleService;
         private readonly EmailProcessor _emailProcessor;
 
         public AuthCreateUserValidator(
             IHttpClientFactory httpClientFactory,
-            HeadersToken headersToken,
             IKeycloakRepository keycloakRepository,
             IService<AssignRoleRequestDTO, AssignRoleResponseDTO> assignRoleService,
             EmailProcessor emailProcessor)
         {
             _httpClientFactory = httpClientFactory;
-            _headersToken = headersToken;
             _keycloakRepository = keycloakRepository;
             _assignRoleService = assignRoleService;
             _emailProcessor = emailProcessor;
@@ -31,11 +30,12 @@ namespace UsersMS.Application.Validators.CreateUser
         public async Task<CreateUserResponseDTO> Execute(CreateUserRequestDTO request)
         {
             var client = _httpClientFactory.CreateClient();
+            client.DefaultRequestHeaders.Clear();
 
             try
             {
-                var token = _headersToken.GetToken();
-                _headersToken.SetAuthorizationHeader(client);
+                var token = await _keycloakRepository.GetClientCredentialsTokenAsync(client);
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
                 if (string.IsNullOrEmpty(request.NameRole))
                 {
@@ -44,11 +44,27 @@ namespace UsersMS.Application.Validators.CreateUser
                         Success = false,
                         Message = "RoleName is required.",
                         Time = DateTime.UtcNow,
-                        UserEmail = request.UserEmail
+                        Email = request.UserEmail
                     };
                 }
 
-                var userCreated = await _keycloakRepository.CreateUserAsync(client, request.EmailToCreate, request.Password);
+                var userId = Guid.NewGuid();
+
+                var attributes = new Dictionary<string, string>
+                {
+                    { "userId", userId.ToString() },
+                    { "name", request.Name },
+                    { "cedula", request.Cedula },
+                    { "phone", request.Phone }
+                };
+
+                var userCreated = await _keycloakRepository.CreateUserAsync(
+                    client,
+                    request.UserEmail,
+                    request.Password,
+                    attributes
+                );
+
                 if (!userCreated)
                 {
                     return new CreateUserResponseDTO
@@ -56,79 +72,54 @@ namespace UsersMS.Application.Validators.CreateUser
                         Success = false,
                         Message = "Error creating user.",
                         Time = DateTime.UtcNow,
-                        UserEmail = request.UserEmail,
-                        EmailToCreate = request.EmailToCreate
-                    };
-                }
-
-                var (userIdStr, _) = await _keycloakRepository.GetUserByEmailAsync(client, request.EmailToCreate, string.Empty);
-                if (!Guid.TryParse(userIdStr, out var userId))
-                {
-                    return new CreateUserResponseDTO
-                    {
-                        Success = false,
-                        Message = "Error retrieving user ID.",
-                        Time = DateTime.UtcNow,
-                        UserEmail = request.UserEmail,
-                        EmailToCreate = request.EmailToCreate
+                        Email = request.UserEmail
                     };
                 }
 
                 var assignRoleResponse = await _assignRoleService.Execute(new AssignRoleRequestDTO
                 {
-                    EmailAssignedRole = request.EmailToCreate,
                     RoleName = request.NameRole,
                     UserEmail = request.UserEmail
                 });
 
                 if (!assignRoleResponse.Success)
                 {
-
                     return new CreateUserResponseDTO
                     {
                         Success = false,
                         Message = "Error assigning role.",
                         Time = DateTime.UtcNow,
-                        UserEmail = request.UserEmail
+                        Email = request.UserEmail
                     };
                 }
 
+                /*
                 var emailResponse = await _emailProcessor.SendEmailAsync(
-                    request.EmailToCreate,
+                    request.UserEmail,
                     "Account Created",
                     "new-user.ftl",
                     new Dictionary<string, string> { { "password", request.Password } });
 
                 if (!emailResponse.Success)
                 {
-
                     return new CreateUserResponseDTO
                     {
                         Success = false,
                         Message = emailResponse.Message,
                         Time = DateTime.UtcNow,
-                        UserEmail = request.UserEmail
+                        Email = request.UserEmail
                     };
                 }
+                */
 
                 return new CreateUserResponseDTO
                 {
                     Success = true,
                     Message = "User created successfully.",
                     Time = DateTime.UtcNow,
-                    UserEmail = request.UserEmail,
-                    EmailToCreate = request.EmailToCreate,
-                    NameRole = request.NameRole
-                };
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return new CreateUserResponseDTO
-                {
-                    Success = false,
-                    Message = $"Unauthorized: {ex.Message}",
-                    Time = DateTime.UtcNow,
-                    UserEmail = request.UserEmail
+                    Email = request.UserEmail,
+                    NameRole = request.NameRole,
+                    UserId = userId
                 };
             }
             catch (Exception ex)
@@ -136,9 +127,9 @@ namespace UsersMS.Application.Validators.CreateUser
                 return new CreateUserResponseDTO
                 {
                     Success = false,
-                    Message = ex.Message,
+                    Message = $"Error interno: {ex.Message}",
                     Time = DateTime.UtcNow,
-                    UserEmail = request.UserEmail
+                    Email = request.UserEmail
                 };
             }
         }
